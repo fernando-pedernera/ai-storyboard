@@ -1,49 +1,51 @@
-# 🎬 Pipeline Automatizado de Storyboards y Animáticas con IA
+# 🎬 AI Storyboard & Animatic Pipeline
 
-![Estado del Proyecto](https://img.shields.io/badge/Estado-Completado-success)
-![Versión de Python](https://img.shields.io/badge/Python-3.10%2B-blue)
-![IA Generativa](https://img.shields.io/badge/IA-Azure%20OpenAI%20%7C%20ComfyUI-purple)
+*[🇪🇸 Leer esta documentación en Español](README.es.md)*
 
-## 📌 Resumen
-Este repositorio contiene un **Pipeline Automatizado de Storyboards y Animáticas**, diseñado para demostrar una integración avanzada de Modelos de Lenguaje Grande (LLMs) con flujos de trabajo de generación de imagen y video.
+![Project Status](https://img.shields.io/badge/Status-Completed-success)
+![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue)
+![Generative AI](https://img.shields.io/badge/AI-Azure%20OpenAI%20%7C%20ComfyUI-purple)
 
-El sistema actúa como un Director de Cine IA autónomo. Toma una idea cruda en texto, utiliza un agente LLM estructurado para desglosarla en escenas cinematográficas precisas, y orquesta programáticamente una instancia de **ComfyUI** "Headless" (sin interfaz, desplegada en una nube de GPUs Serverless a través de Modal) para renderizar los cuadros del storyboard.
+## 📌 Overview
+This repository contains an **Automated Storyboard & Animatic Pipeline**, designed to demonstrate advanced integration of Large Language Models (LLMs) with generative image and video workflows. 
 
-Finalmente, expone un Webhook (API en Flask) que puede ser activado por herramientas de automatización como **n8n** o Make, creando un flujo de trabajo de IA Generativa totalmente autónomo, ideal para estudios creativos y equipos de producción audiovisual.
+The pipeline acts as an autonomous AI Movie Director. It takes a raw text idea, uses a structured LLM agent to break it down into cinematic scenes, and programmatically orchestrates a headless **ComfyUI** instance (deployed on a serverless GPU cloud via Modal) to render the storyboard frames. 
+
+Finally, it exposes a Webhook (Flask API) that can be triggered by automation tools like **n8n** or Make, creating a fully autonomous Generative AI workflow suitable for creative studios and audiovisual production teams.
 
 ---
 
-## 🏗️ Arquitectura Completa del Sistema
+## 🏗️ System Architecture
 
-A continuación se muestra el diagrama de la arquitectura. El flujo ilustra cómo viaja la información desde que el usuario envía su idea hasta que el video final es renderizado en la nube.
+Below is the architecture diagram. The flow illustrates how information travels from the moment the user sends an idea until the final video is rendered in the cloud.
 
 ```mermaid
 graph TD
-    %% Definición de Nodos
-    Start([🚀 Inicio: Webhook en n8n])
-    API[💻 api.py / main_pipeline.py<br/>Orquestador Local]
-    LLM{🧠 Azure OpenAI API<br/>Modelo gpt-5-mini}
+    %% Node Definitions
+    Start([🚀 Start: n8n Webhook])
+    API[💻 api.py / main_pipeline.py<br/>Local Orchestrator]
+    LLM{🧠 Azure OpenAI API<br/>gpt-5-mini Model}
     Modal[☁️ Modal Serverless GPU<br/>comfy_backend.py]
-    ComfyUI[[🎨 ComfyUI Headless<br/>Generación de Imagen]]
-    SDXL[(📦 SDXL & LoRAs<br/>Modelos de IA)]
-    Video[🎞️ video_generator.py<br/>Post-Producción]
-    End([✅ Video Animática Final])
+    ComfyUI[[🎨 ComfyUI Headless<br/>Image Generation]]
+    SDXL[(📦 SDXL & LoRAs<br/>AI Models)]
+    Video[🎞️ video_generator.py<br/>Post-Production]
+    End([✅ Final Animatic Video])
 
-    %% Flujo de datos
-    Start -->|1. Envía Idea de Texto| API
+    %% Data Flow
+    Start -->|1. Sends Text Idea| API
     
-    %% Alargar la conexión y simplificar texto para evitar que 2 y 3 se pisen
-    API --->|2. Inyecta System Prompt| LLM
-    LLM --->|3. Retorna JSON Estructurado| API
+    %% Lengthen connection and simplify text to prevent overlapping 2 and 3
+    API --->|2. Injects System Prompt| LLM
+    LLM --->|3. Returns Structured JSON| API
     
-    API -->|4. Inyecta JSON en workflow_api.json| Modal
-    Modal -->|5. Enciende GPU y Contenedor| ComfyUI
-    ComfyUI <-->|6. Carga de Modelos| SDXL
-    ComfyUI -->|7. Retorna Imágenes Generadas| API
-    API -->|8. Ejecuta script de OpenCV| Video
-    Video -->|9. Cose las imágenes en MP4| End
+    API -->|4. Injects JSON into workflow_api.json| Modal
+    Modal -->|5. Spins up GPU & Container| ComfyUI
+    ComfyUI <-->|6. Loads Models| SDXL
+    ComfyUI -->|7. Returns Generated Images| API
+    API -->|8. Executes OpenCV script| Video
+    Video -->|9. Stitches images into MP4| End
 
-    %% Estilos de Nodos para alto contraste en GitHub
+    %% Node Styles for high contrast on GitHub
     style Start fill:#238636,stroke:#2ea043,stroke-width:2px,color:#ffffff
     style API fill:#1f6feb,stroke:#388bfd,stroke-width:2px,color:#ffffff
     style LLM fill:#8957e5,stroke:#d2a8ff,stroke-width:2px,color:#ffffff
@@ -54,85 +56,85 @@ graph TD
     style End fill:#238636,stroke:#2ea043,stroke-width:2px,color:#ffffff
 ```
 
-### Descripción Detallada de los Componentes:
+### Detailed Component Description:
 
 1. **LLM Director (`llm_director.py`)**: 
-   - Utiliza **Azure OpenAI** junto con Pydantic para garantizar *Salidas Estructuradas* (Structured Outputs).
-   - Transforma una simple indicación del usuario en un payload JSON estricto que contiene: números de escena, descripciones, ángulos de cámara exactos y *prompts* positivos/negativos altamente optimizados para Stable Diffusion.
+   - Uses **Azure OpenAI** alongside Pydantic to guarantee *Structured Outputs*.
+   - Transforms a simple user prompt into a strict JSON payload containing specific camera angles, scene descriptions, and highly optimized positive/negative prompts for Stable Diffusion.
 
-2. **Orquestador Headless de ComfyUI (`main_pipeline.py`)**:
-   - Lee la plantilla base `workflow_api.json` exportada desde ComfyUI.
-   - Modifica el grafo de nodos de manera dinámica, inyectando los prompts generados por el LLM en los nodos correctos (CLIPTextEncode).
-   - Simula y prepara el envío del trabajo de procesamiento hacia el clúster de GPUs en la nube.
+2. **ComfyUI Headless Orchestrator (`main_pipeline.py`)**:
+   - Reads the standard `workflow_api.json` from ComfyUI.
+   - Dynamically modifies the node graph, injecting the LLM-generated prompts into the precise CLIPTextEncode nodes.
+   - Simulates dispatching the compute job to a cloud GPU cluster.
 
-3. **Backend en la Nube (`comfy_backend.py`)**:
-   - Infraestructura definida por código utilizando **Modal**.
-   - Levanta contenedores Linux con GPUs T4 bajo demanda, instala las dependencias de PyTorch y arranca ComfyUI de forma *headless*, asegurando escalabilidad masiva y pago por segundo de uso.
+3. **Cloud Backend (`comfy_backend.py`)**:
+   - Infrastructure as Code (IaC) using **Modal**.
+   - Spins up Linux containers with T4 GPUs on demand, installs PyTorch dependencies, and boots ComfyUI headlessly, ensuring massive scalability and per-second billing.
 
-4. **Endpoint de Automatización (`api.py` & `n8n_workflow.json`)**:
-   - Expone todo el pipeline mediante una API REST en Flask.
-   - Incluye un flujo de trabajo preconfigurado para `n8n` que permite conectar el pipeline a Slack, correo electrónico o sistemas CRM internos, creando un ecosistema de automatización real.
+4. **Automation Endpoint (`api.py` & `n8n_workflow.json`)**:
+   - Exposes the entire pipeline via a Flask REST API.
+   - Includes an `n8n` workflow template to connect the pipeline to Slack, Email, or internal CRM systems.
 
-5. **Post-Producción (`video_generator.py`)**:
-   - Un script apoyado en OpenCV que toma automáticamente las imágenes generadas cuadro por cuadro y las une en una presentación secuencial `.mp4` (Animática).
+5. **Post-Production (`video_generator.py`)**:
+   - An OpenCV-backed script that automatically grabs the generated images frame by frame and stitches them into a sequential `.mp4` presentation (Animatic).
 
+---
 
+## 🚀 Getting Started
 
-## 🚀 Guía de Inicio
+### Prerequisites
+- Python 3.10+
+- Azure OpenAI API Key (or standard OpenAI/Gemini Key)
+- Modal CLI authenticated (`modal token new`)
 
-### Requisitos Previos
-- Python 3.10 o superior.
-- Clave de API de Azure OpenAI (o llave estándar de OpenAI/Gemini).
-- CLI de Modal instalada y autenticada (`modal token new`).
+### Installation
 
-### Instalación
-
-1. Clona este repositorio:
+1. Clone the repository:
 ```bash
 git clone https://github.com/fernando-pedernera/ai-storyboard.git
 cd ai-storyboard
 ```
 
-2. Crea un entorno virtual e instala las dependencias:
+2. Create a virtual environment and install dependencies:
 ```bash
 python -m venv venv
-source venv/bin/activate  # En Windows usa: venv\Scripts\activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install openai pydantic flask requests python-dotenv opencv-python numpy
 ```
 
-3. Configura tus variables de entorno:
-Crea un archivo `.env` en la raíz del proyecto con tus credenciales:
+3. Configure environment variables:
+Create a `.env` file in the root directory:
 ```env
-AZURE_OPENAI_API_KEY=tu_clave_aqui
-AZURE_OPENAI_ENDPOINT=https://tu-endpoint.services.ai.azure.com
+AZURE_OPENAI_API_KEY=your_key_here
+AZURE_OPENAI_ENDPOINT=https://your-endpoint.services.ai.azure.com
 AZURE_OPENAI_DEPLOYMENT_NAME=gpt-5-mini
 API_VERSION=2024-02-15-preview
 ```
 
-### Uso
+### Usage
 
-**1. Ejecutar el Pipeline directamente (CLI):**
+**1. Run the CLI Pipeline:**
 ```bash
 python main_pipeline.py
 ```
-*Esto ejecutará el agente Director, generará los payloads JSON listos para inyección, simulará el entorno de GPU y procesará la lógica del storyboard.*
+*This will execute the agent, generate the JSON payloads, simulate the GPU cloud dispatch, and process the storyboard logic.*
 
-**2. Ejecutar el Servidor Webhook (Para n8n):**
+**2. Run the Webhook Server (For n8n):**
 ```bash
 python api.py
 ```
-*Esto iniciará un servidor local en el puerto 5000, listo para recibir peticiones POST desde n8n, Make o Postman.*
+*This starts a local server on port 5000, ready to receive POST requests from n8n, Make, or Postman.*
 
-**3. Generar la Animática (Video):**
+**3. Generate the Animatic (Video):**
 ```bash
 python video_generator.py
 ```
-*Este script tomará las imágenes generadas por ComfyUI y producirá un archivo `storyboard_pitch.mp4`.*
+*This script will grab the images generated by ComfyUI and stitch them into a `storyboard_pitch.mp4` file.*
 
 ---
 
-## 🎬 Aplicación en el Mundo Real
-En un entorno de producción real, este pipeline ahorra cientos de horas a los artistas conceptuales y directores de arte. Al automatizar la fase de *Prompt Engineering* y la fase de renderizado visual de ComfyUI, un estudio creativo puede generar 10 storyboards visuales diferentes para el "pitch" de un cliente en cuestión de minutos, simplemente enviando un mensaje de Slack con la idea general.
+## 🎬 Real-World Application
+In a real production environment, this pipeline saves hundreds of hours for conceptual artists and directors. By automating the prompt-engineering phase and the ComfyUI rendering phase, a creative studio can generate 10 different visual storyboards for a client pitch in a matter of minutes, simply by sending a Slack message.
 
-## Licencia
+## License
 MIT License

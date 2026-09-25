@@ -77,6 +77,67 @@ graph TD
 5. **Post-Producción (`video_generator.py`)**:
    - Un script apoyado en OpenCV que toma automáticamente las imágenes generadas cuadro por cuadro y las une en una presentación secuencial `.mp4` (Animática).
 
+<details>
+<summary><b>🛠️ Ver Código del Diagrama Avanzado (PlantUML)</b></summary>
+
+Este código PlantUML describe la arquitectura en un formato estándar de la industria (Diagram-as-Code). Puedes copiarlo y pegarlo en herramientas como **Draw.io**, **Lucidchart** o [PlantText](https://www.planttext.com/) para generar un diagrama exportable en alta resolución (SVG/PNG) ideal para presentaciones técnicas.
+
+```plantuml
+@startuml
+!theme mars
+skinparam defaultFontName Arial
+skinparam roundcorner 10
+skinparam monochrome false
+skinparam shadowing true
+skinparam DefaultTextAlignment center
+
+skinparam rectangle {
+    BackgroundColor<<Frontend>> #E2F0D9
+    BorderColor<<Frontend>> #548235
+    BackgroundColor<<Backend>> #DDEBF7
+    BorderColor<<Backend>> #2F5597
+    BackgroundColor<<Azure>> #0078D4
+    FontColor<<Azure>> #FFFFFF
+    BackgroundColor<<Modal>> #8A2BE2
+    FontColor<<Modal>> #FFFFFF
+    BackgroundColor<<Output>> #28A745
+    FontColor<<Output>> #FFFFFF
+}
+
+title Arquitectura: AI Storyboard & Animatic Pipeline
+
+left to right direction
+
+package "Zona 1: Frontend / Trigger" {
+    rectangle "Webhook n8n / Slack" <<Frontend>> as trigger
+}
+
+package "Zona 2: Backend Local (Control Plane)" {
+    rectangle "Orquestador Python\n(api.py / main_pipeline.py)" <<Backend>> as api
+    rectangle "Post-Producción\n(video_generator.py)" <<Backend>> as video
+}
+
+package "Zona 3: Cloud AI Services (Data Plane)" {
+    rectangle "Azure OpenAI API\n[Modelo gpt-4o-mini]" <<Azure>> as azure
+    rectangle "Modal Serverless GPU\n[ComfyUI Headless]" <<Modal>> as modal
+}
+
+package "Zona 4: Output" {
+    rectangle "Animática Final (.mp4)" <<Output>> as out
+}
+
+trigger =right=> api : "1. Envía Idea\n(Texto)"
+api =down=> azure : "2. System Prompt\n(Petición HTTP)"
+azure =up=> api : "3. JSON Estructurado\n(Escenas)"
+api =right=> modal : "4. Inyecta Prompts\n(workflow.json)"
+modal =left=> api : "5. Renderiza e\nInfiere Imágenes"
+api =down=> video : "6. Ejecuta script"
+video =right=> out : "7. Une imágenes"
+
+@enduml
+```
+</details>
+
 ---
 
 ## 🚀 Guía de Inicio

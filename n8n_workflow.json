@@ -1,0 +1,89 @@
+{
+  "name": "AI Storyboard Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-storyboard",
+        "options": {}
+      },
+      "id": "e2f1a601-570a-417b-9c94-1a22bd29c362",
+      "name": "Webhook (Receive Idea)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "custom-webhook-id-1234"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/storyboard",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "idea",
+              "value": "={{$json.body.idea}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f5b2d712-480c-418e-8a95-2b33ce39d473",
+      "name": "Call Python Pipeline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "channel": "generative-art-team",
+        "text": "=Storyboard Generated Successfully!\n\nTitle: {{$json.title}}\nTotal Scenes: {{$json.total_scenes}}\n\nThe ComfyUI jobs have been dispatched to the Modal GPU cluster. The images will be ready shortly.",
+        "otherOptions": {}
+      },
+      "id": "a3c4e823-591d-429f-9b06-3c44df40e584",
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook (Receive Idea)": {
+      "main": [
+        [
+          {
+            "node": "Call Python Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Python Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c9837a28-9128-4e89-8d76-189f78396a84"
+}

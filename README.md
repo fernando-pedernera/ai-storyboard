@@ -20,46 +20,39 @@ A continuación se muestra el diagrama de la arquitectura. El flujo ilustra cóm
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e1e1e', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#7C3AED', 'lineColor': '#8b949e', 'secondaryColor': '#00618A', 'tertiaryColor': '#fff'}}}%%
 graph TD
+    %% Definición de Nodos
+    Start([🚀 Inicio: Webhook en n8n])
+    API[💻 api.py / main_pipeline.py<br/>Orquestador Local]
+    LLM{🧠 Azure OpenAI API<br/>Modelo gpt-5-mini}
+    Modal[☁️ Modal Serverless GPU<br/>comfy_backend.py]
+    ComfyUI[[🎨 ComfyUI Headless<br/>Generación de Imagen]]
+    SDXL[(📦 SDXL & LoRAs<br/>Modelos de IA)]
+    Video[🎞️ video_generator.py<br/>Post-Producción]
+    End([✅ Video Animática Final])
+
+    %% Flujo de datos
+    Start -->|1. Envía Idea de Texto| API
+    
+    %% Alargar la conexión y simplificar texto para evitar que 2 y 3 se pisen
+    API --->|2. Inyecta System Prompt| LLM
+    LLM --->|3. Retorna JSON Estructurado| API
+    
+    API -->|4. Inyecta JSON en workflow_api.json| Modal
+    Modal -->|5. Enciende GPU y Contenedor| ComfyUI
+    ComfyUI <-->|6. Carga de Modelos| SDXL
+    ComfyUI -->|7. Retorna Imágenes Generadas| API
+    API -->|8. Ejecuta script de OpenCV| Video
+    Video -->|9. Cose las imágenes en MP4| End
+
     %% Estilos de Nodos para alto contraste en GitHub
-    classDef webhook fill:#238636,stroke:#2ea043,stroke-width:2px,color:#ffffff
-    classDef orquestador fill:#1f6feb,stroke:#388bfd,stroke-width:2px,color:#ffffff
-    classDef ia fill:#8957e5,stroke:#d2a8ff,stroke-width:2px,color:#ffffff
-    classDef modal fill:#db61a2,stroke:#ff7b72,stroke-width:2px,color:#ffffff
-    classDef comfy fill:#d29922,stroke:#e3b341,stroke-width:2px,color:#ffffff
-    classDef modelos fill:#21262d,stroke:#8b949e,stroke-width:2px,color:#c9d1d9
-
-    %% Capa 1: Entrada
-    Start([🚀 Inicio: Webhook n8n]):::webhook
-
-    %% Capa 2: Backend Local
-    subgraph Local [Entorno Local / Servidor]
-        API[💻 api.py / main_pipeline.py<br/>Orquestador]:::orquestador
-        Video[🎞️ video_generator.py<br/>Post-Producción]:::orquestador
-    end
-
-    %% Capa 3: Servicios IA
-    LLM{🧠 Azure OpenAI<br/>Modelo gpt-5-mini}:::ia
-
-    subgraph Nube [Nube de GPUs]
-        Modal[☁️ Modal Serverless<br/>comfy_backend.py]:::modal
-        ComfyUI[[🎨 ComfyUI Headless<br/>Renderizado]]:::comfy
-        SDXL[(📦 SDXL & LoRAs)]:::modelos
-    end
-
-    End([✅ Video Final]):::webhook
-
-    %% Flujo de datos espaciado para evitar solapamientos
-    Start --->|1. Idea| API
-    API --->|2. Pide Guion| LLM
-    LLM --->|3. Retorna JSON| API
-    
-    API --->|4. Inyecta JSON| Modal
-    Modal --->|5. Levanta GPU| ComfyUI
-    ComfyUI <-->|6. Carga| SDXL
-    ComfyUI --->|7. Retorna Imágenes| API
-    
-    API --->|8. Llama script| Video
-    Video --->|9. Une MP4| End
+    style Start fill:#238636,stroke:#2ea043,stroke-width:2px,color:#ffffff
+    style API fill:#1f6feb,stroke:#388bfd,stroke-width:2px,color:#ffffff
+    style LLM fill:#8957e5,stroke:#d2a8ff,stroke-width:2px,color:#ffffff
+    style Modal fill:#db61a2,stroke:#ff7b72,stroke-width:2px,color:#ffffff
+    style ComfyUI fill:#d29922,stroke:#e3b341,stroke-width:2px,color:#ffffff
+    style SDXL fill:#21262d,stroke:#8b949e,stroke-width:2px,color:#c9d1d9
+    style Video fill:#1f6feb,stroke:#388bfd,stroke-width:2px,color:#ffffff
+    style End fill:#238636,stroke:#2ea043,stroke-width:2px,color:#ffffff
 ```
 
 ### Descripción Detallada de los Componentes:
